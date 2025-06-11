@@ -1,0 +1,27 @@
+{
+  "name": "cjrasmussen/web-request",
+  "description": "Simple functions for making web requests",
+  "version": "1.0.0",
+  "homepage": "https://cjr.dev",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Clark Rasmussen",
+      "homepage": "https://cjr.dev",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/cjrasmussen/WebRequest/issues",
+    "source": "https://github.com/cjrasmussen/WebRequest"
+  },
+  "require": {
+    "php": ">=7.4",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "cjrasmussen\\WebRequest\\": "src/"
+    }
+  }
+}

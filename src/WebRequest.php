@@ -7,6 +7,12 @@ use RuntimeException;
 
 class WebRequest
 {
+	private const DEFAULT_REQUEST_HEADERS = [
+		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36',
+		'Accept: application/json, text/javascript, */*; q=0.01',
+		'Accept-Language: en-US,en;q=0.9',
+	];
+
 	/**
 	 * Gets an external file's contents using cURL
 	 *
@@ -23,6 +29,7 @@ class WebRequest
 		curl_setopt($c, CURLOPT_URL, $url);
 		curl_setopt($c, CURLOPT_MAXREDIRS, 5);
 		curl_setopt($c, CURLOPT_HEADER, 1);
+		curl_setopt($c, CURLOPT_HTTPHEADER, self::DEFAULT_REQUEST_HEADERS);
 		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 10);
 
 		if ($ignore_ssl_errors) {
@@ -83,6 +90,7 @@ class WebRequest
 		$c = curl_init();
 		curl_setopt($c, CURLOPT_URL, $url);
 		curl_setopt($c, CURLOPT_HEADER, true);
+		curl_setopt($c, CURLOPT_HTTPHEADER, self::DEFAULT_REQUEST_HEADERS);
 		curl_setopt($c, CURLOPT_NOBODY, true);
 		curl_setopt($c, CURLOPT_FOLLOWLOCATION, false);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
@@ -199,10 +207,8 @@ class WebRequest
 		sleep(random_int(3, 8));
 
 		// GET THE NEW DATA
+		$headers = array_unique(array_merge(self::DEFAULT_REQUEST_HEADERS, $headers));
 		$headers[] = 'Cookie: ' . http_build_query($cookies);
-		$headers[] = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36';
-		$headers[] = 'Accept: application/json, text/javascript, */*; q=0.01';
-		$headers[] = 'Accept-Language: en-US,en;q=0.9';
 
 		$c = curl_init();
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);

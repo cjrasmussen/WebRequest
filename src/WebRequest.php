@@ -7,7 +7,7 @@ use RuntimeException;
 
 class WebRequest
 {
-	private const DEFAULT_REQUEST_HEADERS = [
+	private const array DEFAULT_REQUEST_HEADERS = [
 		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36',
 		'Accept: application/json, text/javascript, */*; q=0.01',
 		'Accept-Language: en-US,en;q=0.9',
@@ -19,10 +19,9 @@ class WebRequest
 	 * 15-20 times faster than file_get_contents()
 	 *
 	 * @param string $url
-	 * @param bool $ignore_ssl_errors
 	 * @return string|bool
 	 */
-	public static function getFileContents(string $url, bool $ignore_ssl_errors = false)
+	public static function getFileContents(string $url): bool|string
 	{
 		$c = curl_init();
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
@@ -31,11 +30,6 @@ class WebRequest
 		curl_setopt($c, CURLOPT_HEADER, 1);
 		curl_setopt($c, CURLOPT_HTTPHEADER, self::DEFAULT_REQUEST_HEADERS);
 		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 10);
-
-		if ($ignore_ssl_errors) {
-			curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0);
-			curl_setopt($c, CURLOPT_SSL_VERIFYPEER, 0);
-		}
 
 		$curl_error = curl_errno($c);
 		if ($curl_error) {
@@ -47,7 +41,6 @@ class WebRequest
 
 		$response = curl_exec($c);
 		$header_size = curl_getinfo($c, CURLINFO_HEADER_SIZE);
-		curl_close($c);
 
 		$header = trim(substr($response, 0, $header_size));
 		$body = trim(substr($response, $header_size));
@@ -59,20 +52,20 @@ class WebRequest
 
 		$location = '';
 		foreach ($headers AS $h) {
-			if (strpos($h, 'Location: ') === 0) {
+			if (str_starts_with($h, 'Location: ')) {
 				$location = substr($h, 10);
 				break;
 			}
 		}
 
 		if ($location) {
-			if (strpos($location, '/') === 0) {
+			if (str_starts_with($location, '/')) {
 				$url_parts = parse_url($url);
 				$new_url = $url_parts['scheme'] . '://' . $url_parts['host'] . $location;
-				return self::getFileContents($new_url, $ignore_ssl_errors);
+				return self::getFileContents($new_url);
 			}
 
-			return self::getFileContents($location, $ignore_ssl_errors);
+			return self::getFileContents($location);
 		}
 
 		return false;
@@ -82,10 +75,9 @@ class WebRequest
 	 * Gets the response header for a given request using cURL
 	 *
 	 * @param string $url
-	 * @param bool $ignore_ssl_errors
 	 * @return array
 	 */
-	public static function getResponseHeader(string $url, bool $ignore_ssl_errors = false): array
+	public static function getResponseHeader(string $url): array
 	{
 		$c = curl_init();
 		curl_setopt($c, CURLOPT_URL, $url);
@@ -95,16 +87,8 @@ class WebRequest
 		curl_setopt($c, CURLOPT_FOLLOWLOCATION, false);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
 
-		if ($ignore_ssl_errors) {
-			curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0);
-			curl_setopt($c, CURLOPT_SSL_VERIFYPEER, 0);
-		}
-
 		curl_exec($c);
-		$header = curl_getinfo($c);
-		curl_close($c);
-
-		return $header;
+		return curl_getinfo($c);
 	}
 
 	/**
@@ -147,7 +131,7 @@ class WebRequest
 		$port = 80;
 		if ($url_parts['port']) {
 			$port = $url_parts['port'];
-		} elseif ($url_parts['schema'] === 'https') {
+		} elseif ($url_parts['scheme'] === 'https') {
 			$port = 443;
 		}
 
@@ -177,22 +161,16 @@ class WebRequest
 	 * @param $url
 	 * @param string|null $cookie_source
 	 * @param array $headers
-	 * @param bool $ignore_ssl_errors
 	 * @return string
 	 * @throws Exception
 	 * @see https://stackoverflow.com/questions/895786/how-to-get-the-cookies-from-a-php-curl-into-a-variable
 	 */
-	public static function getFileContentsWithCookie($url, ?string $cookie_source = null, array $headers = [], bool $ignore_ssl_errors = false): string
+	public static function getFileContentsWithCookie($url, ?string $cookie_source = null, array $headers = []): string
 	{
 		// DO A REQUEST TO GET A SESSION COOKIE
 		$c = curl_init($cookie_source);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($c, CURLOPT_HEADER, 1);
-
-		if ($ignore_ssl_errors) {
-			curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0);
-			curl_setopt($c, CURLOPT_SSL_VERIFYPEER, 0);
-		}
 
 		$result = curl_exec($c);
 
@@ -218,27 +196,18 @@ class WebRequest
 		curl_setopt($c, CURLOPT_HEADER, 0);
 		curl_setopt($c, CURLOPT_HTTPHEADER, $headers);
 
-		if ($ignore_ssl_errors) {
-			curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 0);
-			curl_setopt($c, CURLOPT_SSL_VERIFYPEER, 0);
-		}
-
-		$html = curl_exec($c);
-		curl_close($c);
-
-		return $html;
+		return curl_exec($c);
 	}
 
 	/**
 	 * Gets an external file's contents and mime type
 	 *
 	 * @param string $url
-	 * @param bool $ignore_ssl_errors
 	 * @return object{contents: string, mimeType: string}
 	 */
-	public static function getFileContentsAndMimeType(string $url, bool $ignore_ssl_errors = false): object
+	public static function getFileContentsAndMimeType(string $url): object
 	{
-		$contents = self::getFileContents($url, $ignore_ssl_errors);
+		$contents = self::getFileContents($url);
 
 		$temp_file_path = tempnam(('/' . trim(sys_get_temp_dir(), '/') . '/'), 'o6tmp');
 		file_put_contents($temp_file_path, $contents);
